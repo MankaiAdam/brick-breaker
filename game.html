@@ -6,109 +6,321 @@
     <title>Brick Breaker Game</title>
     <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<body onmousemove="coordinate(event)">
     <audio id="music" controls loop>
         <source src="music.mp3" type="audio/mpeg">
       Your browser does not support the audio element.
     </audio>
-    <div id="gameContainer" class="container">
+    <audio id="ignite" controls>
+        <source src="ignite.mp3" type="audio/mpeg">
+      Your browser does not support the audio element.
+    </audio>
+    <div id="leaderboard">
+        <div id="leaderBoardTitle">LeaderBoard</div>
+        <div id="leaderBoardItems"></div>
+    </div>
+    <div id="gameContainer" class="container" >
         <div id="paddle"></div>
         <div id="ball"></div>
+        <div id="trailContainer"></div>
         <div id="bricks"></div>
+        <div id="shield"></div>
         <div id="score"> Score: 0</div>
         <div id="lives"></div>
         <div id="menuBlur"></div>
-        <img id="settingsBtn" onclick="showSettings()"></img>
+        <img id="settingsBtn" onclick="showHideSettings(true)"></img>
         <img id="pause"></img>
         <div id="startText">Press Space To Launch</div>
     </div>
-    <div id="menuContainer" class="container">
-        <div id="settings">
-            <div>Resume</div>
+    <div id="endContainer" class="container">
+        <div id="endMenu">
+            <div id="finalScore">Score: 200</div>
+            <div id="finalLevel">Level: 3</div>
+            <input id="name" placeholder="Name here..">
+            <input id="submitBtn" type="button" value="Submit" onclick="submitScore()">
         </div>
     </div>
-    
+    <div id="menuContainer" class="container">
+        <div id="settings">
+            <div class = "settingsMenuItem" onclick="showHideSettings(false)">Resume</div>
+            <div class = "settingsMenuItem" onclick="showHideHelpMenu(true)">Help</div>
+            <div class = "settingsMenuItem">
+                <input type="checkbox" id="toggleControl" onchange="mouseKeyboard()">
+                <input type="checkbox" id="toggleMusic" onchange="OnOffMusic()">
+            </div>
+        </div>
+    </div>
+
+    <div id="helpMenuContainer">
+        <div id="helpTopBar">
+            <img id="close" onclick="showHideHelpMenu(false)"></img>
+        </div>
+        <center><h4>How to Play</h4></center>
+        <p>Welcome to the Brick Breaker Game! Here's how to play:</p>
+        <ul>
+            <li><strong>Objective : </strong> Break all the bricks to win the game.</li>
+            <img class="helpImages" src="help/Break_help.png">
+            <li><strong>Controls : </strong> Use the left and right arrow keys (or Q/D) to move the paddle.</li>
+            <li><strong>Ball : </strong> The ball will bounce off the paddle and break the bricks.</li>
+            <img class="helpImages" src="help/Bounce_help.png">
+            <li><strong>Power-ups : </strong> Collect power-ups that might appear after breaking bricks to gain special abilities like a larger paddle or the Legendary FireBall!!!</li>
+            <div id="powerUpsIcons">
+                <img src="ExpandPaddle.svg">
+                <img src="Shield.svg">
+                <img src="SlowBall.svg">
+                <img src="ExtraLife.svg">
+                <img src="FireBall.svg">
+            </div>
+            <li><strong>Game Over : </strong> If the ball falls below the paddle, you lose a life!</li>
+            <li><strong>Leaderboard : </strong> Compete with friends and see your rank on the leaderboard by scoring the most points!</li>
+        </ul>
+    </div>
+
     <script>
         const music = document.getElementById("music");
+        const ignite = document.getElementById("ignite");
         const gameContainer = document.getElementById("gameContainer");
+        const leaderBoardItems = document.getElementById("leaderBoardItems");
+        const nameInput = document.getElementById("name");
         const paddle = document.getElementById("paddle");
         const ball = document.getElementById("ball");
+        const trailContainer = document.getElementById("trailContainer");
         const bricksContainer = document.getElementById("bricks");
+        const shield = document.getElementById("shield");
         const scoreText = document.getElementById("score");
         const livesContainer = document.getElementById("lives");
         const menuContainer = document.getElementById("menuContainer");
+        const helpMenuContainer = document.getElementById("helpMenuContainer");
         const menuBlur = document.getElementById("menuBlur");
         const settingsMenu = document.getElementById("settings");
         const pauseIcon = document.getElementById("pause");
         const startText = document.getElementById("startText");
+        const endContainer = document.getElementById("endContainer");
+        const finalScore = document.getElementById("finalScore");
+        const finalLevel = document.getElementById("finalLevel");
 
         const gameWidth = 800;
         const gameHeight = 600;
+        const paddleNormalWidth = 100;
         const paddleExpandedWidth = 150;
+        const regularSpeed = 4;
+        const slowSpeed = 2;
+        const powerUpDropSpeed = 1;
         const paddleHeight = 10;
         const ballRadius = 9;
-        const brickRowCount = 5;
-        const brickColumnCount = 13;
-        const brickWidth = 50;
-        const brickHeight = 24;
         const brickPadding = 5;
-        const brickOffsetTop = 65;
-        const brickOffsetLeft = 45;
-        const powerUpDropSpeed = 1;
+        const unbreakableColor = "#ffffff";
         const bricksColors = ["#fdf137", "#52ad53", "#60ceff", "#0091ff" ,"#db3729"]
-        const bricksLvls = [
-            [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
-            [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
-            [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
-            [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
-            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-        ];
+        const levels = [
+            {brickRowCount: 5, brickColumnCount: 9, brickOffsetTop: 65, brickOffsetLeft: 110, brickWidth: 60, brickHeight: 24, bricksLvls: [
+                [3, 3, 3, 3, 3, 3, 3, 3, 3],
+                [2, 2, 2, 2, 2, 2, 2, 2, 2],
+                [2, 2, 2, 2, 2, 2, 2, 2, 2],
+                [1, 1, 1, 1, 1, 1, 1, 1, 1],
+                [1, 1, 1, 1, 1, 1, 1, 1, 1]
+                ]
+            },
+            {brickRowCount: 5, brickColumnCount: 13, brickOffsetTop: 65, brickOffsetLeft: 45, brickWidth: 50, brickHeight: 24, bricksLvls: [
+                [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+                [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+                [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+                [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+                ]
+            },
+            {brickRowCount: 11, brickColumnCount: 11, brickOffsetTop: 65, brickOffsetLeft: 100, brickWidth: 50, brickHeight: 24, bricksLvls: [
+                [0, -5, -5, -5, -5, -5, -5, -5, -5, -5, 0],
+                [0, -5, 5, 5, 5, 5, 5, 5, 5, -5, 0],
+                [0, -5, 5, 4, 4, 4, 4, 4, 5, -5, 0],
+                [-5, -5, -5, 3, 3, 3, 3, 3, -5, -5, -5],
+                [-5, 4, 4, 4, 4, 4, 4, 4, 4, 4, -5],
+                [-5, 4, 3, 3, 3, 3, 3, 3, 3, 4, -5],
+                [-5, 4, 3, 3, 3, 3, 3, 3, 3, 4, -5],
+                [-5, -5, 2, 2, 2, 2, 2, 2, 2,-5, -5],
+                [0, -5, 2, 2, 2, 2, 2, 2, 2, -5, 0],
+                [0, -5, 1, 1, 1, 1, 1, 1, 1, -5, 0],
+                [0, -5, 1, 1, 1, 1, 1, 1, 1, -5, 0]
+                ]
+            }
+        ]
         
         const powerUpsInfo = [
-            { type: "ExpandPaddle", chance: 30 }, // 30% chance
-            { type: "Shield", chance: 30 }, // 5% chance
-            //{ type: "StickyPaddle", chance: 20 }, // 20% chance
-            //{ type: "SlowBall", chance: 25 },    // 25% chance
-            { type: "FireBall", chance: 15 },    // 15% chance
-            { type: "ExtraLife", chance: 5 }    // 5% chance
+            { type: "ExpandPaddle", chance: 30, duration: 10000 },
+            { type: "Shield", chance: 10    , duration: 8000 }, 
+            //{ type: "StickyPaddle", chance: 20 },
+            { type: "SlowBall", chance: 25, duration: 8000 },    
+            { type: "FireBall", chance: 15, duration: 6000 },    
+            { type: "ExtraLife", chance: 5, duration: 0 } // No duration, permanent
         ];
-        
+
         let paddleX;
-        let paddleWidth = 100;
+        let paddleWidth = paddleNormalWidth;
         let ballX;
         let ballY;
         let ballDX;
         let ballDY;
-        let speed = 1;
+        let speed = regularSpeed;
+        let mouseControl = false;
+        let mouseX = 0;
         let rightPressed = false;
         let leftPressed = false;
         let firstThrow = true;
         let onFire = false;
-        let shield = false;
+        let shieldActive = false;
+        let bounced = false;
         let paused = true;
+        let musicPaused = false;
         let bricks = [];
         let powerUps = [];
+        let level = 0;
         let score = 0;
         let lives = 3;
 
+        /*var obj = {
+            "Info":[
+            {"Name":"Adam", "Score":260},
+            {"Name":"Mohamed", "Score":140},
+            {"Name":"Ahmed", "Score":100}
+            ]
+        }
+
+        localStorage.setItem('gameStorage', JSON.stringify(obj)); 
+        console.log(JSON.parse(localStorage.getItem('gameStorage')));*/
+        //localStorage.clear();
+        
+        function coordinate(event) {
+            mouseX = event.clientX - gameContainer.offsetLeft;
+        }
+        
+        function showHideSettings(show){
+            if(show){
+                paused = true;
+                gameContainer.style.filter = "blur(4px)";
+                menuContainer.style.visibility = "visible";
+                menuBlur.style.visibility = "visible";
+            }else{
+                if(!firstThrow)
+                    paused = false;
+                gameContainer.style.filter = "blur(0px)";
+                menuContainer.style.visibility = "hidden";
+                menuBlur.style.visibility = "hidden";
+            }
+        }
+
+        function showHideHelpMenu(show){
+
+            if(show){
+                menuContainer.style.visibility = "hidden";
+                helpMenuContainer.style.visibility = "visible"
+            }else{
+                menuContainer.style.visibility = "visible";
+                helpMenuContainer.style.visibility = "hidden"
+            }
+        }
+
+        function mouseKeyboard(){
+            mouseControl = !mouseControl;
+        }
+
+        function OnOffMusic(on) {
+            if(musicPaused && !firstThrow){
+                music.play();
+                musicPaused = false;
+            }
+            else{
+                music.pause();
+                musicPaused = true;
+            }
+        }
+
+        function showEndMenu(){
+            finalScore.innerText = "Score: " + score;
+            finalLevel.innerText = "Level: " + (level+1);
+            paused = true;
+            gameContainer.style.filter = "blur(4px)"
+            endContainer.style.visibility = "visible";
+            menuBlur.style.visibility = "visible";
+        }
+
+        
+        function submitScore(){
+            if(nameInput.value != ""){
+                const newElement = {"Name": nameInput.value, "Score": score};
+                let index = 0;
+                if(gameStorage){
+                    for(index ; index < gameStorage.Info.length ; index++){
+                        if(gameStorage.Info[index].Score<score) break;
+                    }
+                }else{
+                    gameStorage = {"Info":[]};
+                }
+                gameStorage.Info.splice(index, 0, newElement);
+                localStorage.setItem('gameStorage', JSON.stringify(gameStorage)); 
+                updateLeaderBoard(gameStorage);
+            }
+        }
+
+        function updateLeaderBoard(strg){
+            if (strg && strg.Info.length){
+                while (leaderBoardItems.firstChild) {
+                    leaderBoardItems.removeChild(leaderBoardItems.firstChild);
+                }
+                strg.Info.forEach((playerinfo, index) => {
+                    const playerInfo = document.createElement("div");
+                    playerInfo.classList.add("playerInfo");
+                    const playerName = document.createElement("div");
+                    playerName.classList.add("playerName");
+                    if(index<=2){
+                        const playerNumber = document.createElement("img");
+                        playerNumber.classList.add("playerNumber");
+                        playerNumber.src = "medal"+ (index+1) +".svg";
+                        playerName.appendChild(playerNumber);
+                    }else{
+                        playerName.innerHTML = (index+1) + " ";
+                        playerName.style.marginLeft = "7px";
+                    }
+                    playerName.innerHTML += playerinfo.Name;
+                    const playerScore = document.createElement("div");
+                    playerScore.classList.add("playerScore");
+                    playerScore.textContent = playerinfo.Score;
+                    playerInfo.appendChild(playerName);
+                    playerInfo.appendChild(playerScore);
+                    leaderBoardItems.appendChild(playerInfo);
+                });
+            }else{
+                const noInfo = document.createElement("div");
+                noInfo.classList.add("noInfo");
+                noInfo.innerText = "No Records Yet";
+                leaderBoardItems.appendChild(noInfo);
+            }
+        }
+
         function createBricks() {
-            for (let r = 0; r < brickRowCount; r++) {
-                for (let c = 0; c < brickColumnCount; c++) {
+            while (bricksContainer.firstChild) {
+                bricksContainer.removeChild(bricksContainer.firstChild);
+            }
+            for (let r = 0; r < levels[level].brickRowCount; r++) {
+                for (let c = 0; c < levels[level].brickColumnCount; c++) {
                     const brick = document.createElement("div");
                     brick.classList.add("brick");
-                    brick.style.left = `${c * (brickWidth + brickPadding) + brickOffsetLeft}px`;
-                    brick.style.top = `${r * (brickHeight + brickPadding) + brickOffsetTop}px`;
-                    brick.style.width = `${brickWidth}px`;
-                    brick.style.height = `${brickHeight}px`;
-                    brick.style.backgroundColor = bricksColors[bricksLvls[r][c]-1];
-                    bricksContainer.appendChild(brick);
+                    brick.style.left = `${c * (levels[level].brickWidth + brickPadding) + levels[level].brickOffsetLeft}px`;
+                    brick.style.top = `${r * (levels[level].brickHeight + brickPadding) + levels[level].brickOffsetTop}px`;
+                    brick.style.width = `${levels[level].brickWidth}px`;
+                    brick.style.height = `${levels[level].brickHeight}px`;
+                    if(levels[level].bricksLvls[r][c] == -5)
+                        brick.style.backgroundColor = unbreakableColor;
+                    else if(levels[level].bricksLvls[r][c]>0)
+                        brick.style.backgroundColor = bricksColors[levels[level].bricksLvls[r][c]-1];
+
+                    if (levels[level].bricksLvls[r][c]!=0)
+                        bricksContainer.appendChild(brick);
                     bricks.push({
                         element: brick,
-                        x: c * (brickWidth + brickPadding) + brickOffsetLeft,
-                        y: r * (brickHeight + brickPadding) + brickOffsetTop,
-                        width: brickWidth,
-                        height: brickHeight,
-                        level: bricksLvls[r][c]
+                        x: c * (levels[level].brickWidth + brickPadding) + levels[level].brickOffsetLeft,
+                        y: r * (levels[level].brickHeight + brickPadding) + levels[level].brickOffsetTop,
+                        width: levels[level].brickWidth,
+                        height: levels[level].brickHeight,
+                        level: levels[level].bricksLvls[r][c]
                     });
                 }
             }
@@ -127,7 +339,7 @@
             ballX = gameWidth / 2;
             ballY = gameHeight - 36;
             ballDX = 0; 
-            ballDY = -speed;
+            ballDY = -1;
         }
 
         function updateBallAndPaddle() {
@@ -137,11 +349,93 @@
             ball.style.top = `${ballY - ballRadius}px`;
         }
         
-        function showSettings(){
-            paused = true;
-            gameContainer.style.filter = "blur(4px)"
-            menuContainer.style.visibility = "visible";
-            menuBlur.style.visibility = "visible";
+
+        function createTrail(x, y) {
+            const trail = document.createElement("div");
+            trail.classList.add("trail");
+            trail.style.left = `${x}px`;
+            trail.style.top = `${y}px`;
+
+            const randomDuration = Math.random() * 0.3 + 0.5;
+            const randomColor = `rgba(255, ${Math.floor(Math.random() * 100 + 50)}, 0, 0.8)`;
+            trail.style.animationDuration = `${randomDuration}s`;
+            trail.style.backgroundColor = randomColor;
+            const randomOffset = Math.random() * 6 - 3;
+            trail.style.setProperty('--random-offset', randomOffset);
+
+            trailContainer.appendChild(trail);
+
+            setTimeout(() => trail.remove(), randomDuration * 1000);
+        }
+
+        function expandPaddle(){
+            console.log("expand");
+            paddleX -= (paddleExpandedWidth - paddleWidth) / 2;
+            paddleX = Math.max(0, Math.min(gameWidth - paddleWidth, paddleX));
+            paddleWidth = paddleExpandedWidth;
+            setTimeout(() => {
+                paddleX += (paddleExpandedWidth - paddleNormalWidth) / 2;
+                paddleWidth = paddleNormalWidth;
+                //paddleX = Math.max(0, Math.min(gameWidth - paddleWidth, paddleX));
+            }, powerUpsInfo.find(p => p.type === "ExpandPaddle").duration);
+        }
+
+        function activateShield(){
+            console.log("shield");
+            shieldActive = true;
+            shield.style.visibility = "visible";
+            setTimeout(() => {
+                shieldActive = false;
+                shield.style.visibility = "hidden";
+            }, powerUpsInfo.find(p => p.type === "Shield").duration);
+        }
+
+        function activateSlowBall(){
+            console.log("slow");
+            speed = slowSpeed;
+            setTimeout(() => {
+                speed = regularSpeed;
+            }, powerUpsInfo.find(p => p.type === "SlowBall").duration);
+        }
+
+        function activateFireBall(){
+            console.log("fire");
+            ignite.play();
+            ball.classList.add("fireball");
+            onFire = true;
+            setTimeout(() => {
+                ball.classList.remove("fireball");
+                onFire = false;
+            }, powerUpsInfo.find(p => p.type === "FireBall").duration);
+        }
+
+        function giveExtraLife(){
+            console.log("extra");
+            if (lives < 4){
+                lives++;
+                const heart = document.createElement("img");
+                heart.classList.add("heart");
+                heart.style.visibility = "visible";
+                livesContainer.appendChild(heart);
+                setTimeout(() => {
+                    heart.style.visibility = "hidden";
+                    setTimeout(() => {
+                        heart.style.visibility = "visible";
+                        setTimeout(() => {
+                            heart.style.visibility = "hidden";
+                            setTimeout(() => {
+                                heart.style.visibility = "visible";
+                                setTimeout(() => {
+                                    heart.style.visibility = "hidden";
+                                    setTimeout(() => {
+                                        heart.style.visibility = "visible";
+                                    }, 300);
+                                }, 300);
+                            }, 300);
+                        }, 300);
+                    }, 300);
+                }, 300);
+            }else score += 100;
         }
 
         function updatePowerUps(){
@@ -154,25 +448,19 @@
                     
                     switch(powerUp.type){
                         case "ExpandPaddle":
-                            console.log("expand");
-                            paddleX -= (paddleExpandedWidth - paddleWidth) / 2;
-                            paddleWidth = paddleExpandedWidth;
-                            break;
-                        case "FireBall":
-                            console.log("fire");
-                            ball.style.backgroundColor = "#e14212";
-                            onFire = true;
-                            break;
-                        case "ExtraLife":
-                            console.log("extra");
-                            lives++;
-                            const heart = document.createElement("img");
-                            heart.classList.add("heart");
-                            livesContainer.appendChild(heart);
+                            expandPaddle();
                             break;
                         case "Shield":
-                            console.log("shield");
-                            shield = true;
+                            activateShield();
+                            break;
+                        case "SlowBall":
+                            activateSlowBall();
+                            break;
+                        case "FireBall":
+                            activateFireBall();
+                            break;
+                        case "ExtraLife":
+                            giveExtraLife();
                             break;
                     }
                     
@@ -185,69 +473,128 @@
                 }
             });
         }
-        updateLives(lives);
-        createBricks();
-        resetBallAndPaddle();
-        updateBallAndPaddle();
+
+        function nextLevel(){
+            if(level < levels.length-1){
+                level++;
+                bricks = [];
+                createBricks();
+                resetBallAndPaddle();
+                updateBallAndPaddle();
+            }
+            else showEndMenu();
+        }
 
         document.addEventListener("keydown", (e) => {
-            if (e.key === "Right" || e.key === "ArrowRight") rightPressed = true;
-            if (e.key === "Left" || e.key === "ArrowLeft") leftPressed = true;
+
+        });
+
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "d" || e.key === "Right" || e.key === "ArrowRight") rightPressed = true;
+            if (e.key === "q" || e.key === "Left" || e.key === "ArrowLeft") leftPressed = true;
             if (e.key === "p") if(!firstThrow) paused = !paused;
-            if (e.key === " ") {
-                music.play();
+            if (e.key === "s"){
+                activateFireBall();
+                //activateSlowBall();
+                //paddle.classList.add("sticky");
+            }
+            if (e.key === "n"){
+                nextLevel();
+            }
+            if (e.key === " " ) {
+                if(!musicPaused)
+                    music.play();
+                showHideSettings(false);
                 paused = false;
                 firstThrow = false;
             }
         });
 
         document.addEventListener("keyup", (e) => {
-            if (e.key === "Right" || e.key === "ArrowRight") rightPressed = false;
-            if (e.key === "Left" || e.key === "ArrowLeft") leftPressed = false;
+            if (e.key === "d" || e.key === "Right" || e.key === "ArrowRight") rightPressed = false;
+            if (e.key === "q" || e.key === "Left" || e.key === "ArrowLeft") leftPressed = false;
         });
 
         function update() {
             if (!paused){
                 pauseIcon.style.visibility = "hidden";
-                if (rightPressed && paddleX < gameWidth - paddleWidth) paddleX += 4; //move right
-                if (leftPressed && paddleX > 0) paddleX -= 4; //move left
 
-                ballX += ballDX;
-                ballY += ballDY;
+                if(mouseControl) paddleX = Math.max(paddleWidth/2, Math.min(gameWidth - paddleWidth/2, mouseX)) - paddleWidth/2;
+                else{
+                    if (rightPressed && paddleX < gameWidth - paddleWidth) paddleX += 4; //move right
+                    if (leftPressed && paddleX > 0) paddleX -= 4; //move left
+                }
+
+                ballX += speed * ballDX;
+                ballY += speed * ballDY;
+
+                if (onFire) {
+                    createTrail(ballX - ballRadius, ballY - ballRadius);
+                }
 
                 if (ballX - ballRadius <= 0 || ballX + ballRadius >= gameWidth) ballDX = -ballDX; //bounce off side walls
-                if (ballY - ballRadius <= 0) ballDY = -ballDY; //bounce off top wall
+                if ((shieldActive &&  ballY + ballRadius > gameHeight - 10) || ballY - ballRadius <= 0) ballDY = -ballDY; //bounce off top wall or the bottom wall while having shield
 
                 if (ballY + ballRadius >= gameHeight - paddleHeight - 15 && ballX >= paddleX && ballX <= paddleX + paddleWidth) { //bounce off paddle
                     const hitPosition = ((ballX - paddleX) / paddleWidth - 0.5) * 2; // Normalized hit position (-1 to 1)
-                    const angle = hitPosition * Math.PI / 4; // Maximum bounce angle of 45 degrees
-                    ballDX = speed * Math.sin(angle);
-                    ballDY = -speed * Math.cos(angle);
-                } else if (ballY - ballRadius > gameHeight) {
+                    const angle = hitPosition * Math.PI / 4; // angle between -45 and 45 degrees
+                    ballDX = Math.sin(angle);
+                    ballDY = - Math.cos(angle);
+                } else if (!shieldActive && ballY - ballRadius > gameHeight) {
                     lives--;
                     livesContainer.removeChild(livesContainer.firstChild);
                     if (lives === 0) {
-                        alert("Game Over");
-                        document.location.reload();
+                        showEndMenu();
+                        //alert("Game Over");
+                        //document.location.reload();
                     } else {
                         paused = true;
                         firstThrow = true;
                         resetBallAndPaddle();
                     }
-                }
+                };
 
                 bricks.forEach((brick, index) => {
-                    if (brick.level != 0 &&
-                        ballX + ballRadius > brick.x &&
-                        ballX - ballRadius < brick.x + brick.width &&
-                        ballY + ballRadius > brick.y &&
-                        ballY - ballRadius < brick.y + brick.height){
+                    const brickLeft = brick.x;
+                    const brickRight = brick.x + brick.width;
+                    const brickTop = brick.y;
+                    const brickBottom = brick.y + brick.height;
 
-                        if (!onFire) ballDY = -ballDY;
+                    const ballLeft = ballX - ballRadius;
+                    const ballRight = ballX + ballRadius;
+                    const ballTop = ballY - ballRadius;
+                    const ballBottom = ballY + ballRadius;
+
+                    if (brick.level != 0 &&
+                        ballRight > brickLeft &&
+                        ballLeft < brickRight &&
+                        ballBottom > brickTop &&
+                        ballTop < brickBottom){
+
+                        const distFromLeft = Math.abs(ballRight - brickLeft);
+                        const distFromRight = Math.abs(ballLeft - brickRight);
+                        const distFromTop = Math.abs(ballBottom - brickTop);
+                        const distFromBottom = Math.abs(ballTop - brickBottom);
+
+                        const minDist = Math.min(distFromLeft, distFromRight, distFromTop, distFromBottom);
+
+                        if ((!onFire && !bounced) || (brick.level == -5 && !bounced)) {
+
+                            if (minDist === distFromLeft || minDist === distFromRight) {
+                                ballDX = -ballDX;
+                                console.log("sides");
+                                
+                            } else if (minDist === distFromTop || minDist === distFromBottom) {
+                                ballDY = -ballDY;
+                                console.log("top or bottom");
+                            }
+                            bounced = true;
+                        }
+                            
                         if(brick.level == 1){
                             
                             // 20% chance to generate a power-up
-                            if (Math.random() < 0.2) {
+                            if (Math.random() < 0.1) {
 
                                 const totalChance = powerUpsInfo.reduce((sum, powerUp) => sum + powerUp.chance, 0);
                                 const random = Math.random() * totalChance;
@@ -258,7 +605,7 @@
                                     if (random <= chance) {
                                         const powerUp = document.createElement("div");
                                         powerUp.classList.add("powerUp");
-                                        powerUp.style.left = `${brick.element.offsetLeft + brickWidth / 2 - 10}px`;
+                                        powerUp.style.left = `${brick.element.offsetLeft + levels[level].brickWidth / 2 - 10}px`;
                                         powerUp.style.top = `${brick.y}px`;
                                         powerUp.style.content = `url("${pwi.type}.svg")`;
                                         gameContainer.appendChild(powerUp);
@@ -275,16 +622,20 @@
                             
                             brick.element.remove();
 
-                        } else brick.element.style.backgroundColor = bricksColors[brick.level-2];
-                        brick.level--;
-                        score++;
-                        scoreText.textContent = `Score: ${score}`;
-                        if (bricks.every(b => b.level == 0)) {
-                            alert("You win!");
-                            document.location.reload();
+                        } else if (brick.level!=-5) brick.element.style.backgroundColor = bricksColors[brick.level-2];
+                        if (brick.level!=-5){
+                            brick.level--;
+                            score++;
+                            scoreText.textContent = `Score: ${score}`;
+                        }
+                        if (bricks.every(b => b.level <= 0 )) {
+                            nextLevel();
+                            //alert("You win!");
+                            //document.location.reload();
                         }
                     }
                 });
+                bounced = false;
 
                 updatePowerUps();
                 updateBallAndPaddle();
@@ -296,7 +647,18 @@
             requestAnimationFrame(update);
         }
 
+        var gameStorage = JSON.parse(localStorage.getItem('gameStorage')); 
+        music.volume = 0.4;
+
+        updateLeaderBoard(gameStorage);
+
+        updateLives(lives);
+        createBricks();
+        resetBallAndPaddle();
+        updateBallAndPaddle();
+
         update();
+
     </script>
 </body>
 </html>
