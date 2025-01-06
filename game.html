@@ -4,15 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Brick Breaker Game</title>
+    <script src="jquery-3.7.1.js"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
-<body onmousemove="coordinate(event)">
+<body>
     <audio id="music" controls loop>
-        <source src="music.mp3" type="audio/mpeg">
+        <source src="Sounds/music.mp3" type="audio/mpeg">
       Your browser does not support the audio element.
     </audio>
     <audio id="ignite" controls>
-        <source src="ignite.mp3" type="audio/mpeg">
+        <source src="Sounds/ignite.mp3" type="audio/mpeg">
       Your browser does not support the audio element.
     </audio>
     <div id="leaderboard">
@@ -65,39 +66,40 @@
             <img class="helpImages" src="help/Bounce_help.png">
             <li><strong>Power-ups : </strong> Collect power-ups that might appear after breaking bricks to gain special abilities like a larger paddle or the Legendary FireBall!!!</li>
             <div id="powerUpsIcons">
-                <img src="ExpandPaddle.svg">
-                <img src="Shield.svg">
-                <img src="SlowBall.svg">
-                <img src="ExtraLife.svg">
-                <img src="FireBall.svg">
+                <img src="Images/ExpandPaddle.svg">
+                <img src="Images/Shield.svg">
+                <img src="Images/SlowBall.svg">
+                <img src="Images/ExtraLife.svg">
+                <img src="Images/FireBall.svg">
             </div>
             <li><strong>Game Over : </strong> If the ball falls below the paddle, you lose a life!</li>
             <li><strong>Leaderboard : </strong> Compete with friends and see your rank on the leaderboard by scoring the most points!</li>
+            <li><strong>CHEAT : </strong> Press N to skip to the next Level 😉</li>
         </ul>
     </div>
 
     <script>
-        const music = document.getElementById("music");
-        const ignite = document.getElementById("ignite");
-        const gameContainer = document.getElementById("gameContainer");
-        const leaderBoardItems = document.getElementById("leaderBoardItems");
-        const nameInput = document.getElementById("name");
-        const paddle = document.getElementById("paddle");
-        const ball = document.getElementById("ball");
-        const trailContainer = document.getElementById("trailContainer");
-        const bricksContainer = document.getElementById("bricks");
-        const shield = document.getElementById("shield");
-        const scoreText = document.getElementById("score");
-        const livesContainer = document.getElementById("lives");
-        const menuContainer = document.getElementById("menuContainer");
-        const helpMenuContainer = document.getElementById("helpMenuContainer");
-        const menuBlur = document.getElementById("menuBlur");
-        const settingsMenu = document.getElementById("settings");
-        const pauseIcon = document.getElementById("pause");
-        const startText = document.getElementById("startText");
-        const endContainer = document.getElementById("endContainer");
-        const finalScore = document.getElementById("finalScore");
-        const finalLevel = document.getElementById("finalLevel");
+        const music = $("#music");
+        const ignite = document.getElementById('ignite');
+        const gameContainer = $("#gameContainer");
+        const leaderBoardItems = $("#leaderBoardItems");
+        const nameInput = $("#name");
+        const paddle = $("#paddle");
+        const ball = $("#ball");
+        const trailContainer = $("#trailContainer");
+        const bricksContainer = $("#bricks");
+        const shield = $("#shield");
+        const scoreText = $("#score");
+        const livesContainer = $("#lives");
+        const menuContainer = $("#menuContainer");
+        const helpMenuContainer = $("#helpMenuContainer");
+        const menuBlur = $("#menuBlur");
+        const settingsMenu = $("#settings");
+        const pauseIcon = $("#pause");
+        const startText = $("#startText");
+        const endContainer = $("#endContainer");
+        const finalScore = $("#finalScore");
+        const finalLevel = $("#finalLevel");
 
         const gameWidth = 800;
         const gameHeight = 600;
@@ -105,6 +107,7 @@
         const paddleExpandedWidth = 150;
         const regularSpeed = 4;
         const slowSpeed = 2;
+        const powerUpChance = 0.1;
         const powerUpDropSpeed = 1;
         const paddleHeight = 10;
         const ballRadius = 9;
@@ -146,10 +149,10 @@
         
         const powerUpsInfo = [
             { type: "ExpandPaddle", chance: 30, duration: 10000 },
-            { type: "Shield", chance: 10    , duration: 8000 }, 
+            { type: "Shield", chance: 10    , duration: 8000 },
             //{ type: "StickyPaddle", chance: 20 },
-            { type: "SlowBall", chance: 25, duration: 8000 },    
-            { type: "FireBall", chance: 15, duration: 6000 },    
+            { type: "SlowBall", chance: 25, duration: 8000 },
+            { type: "FireBall", chance: 15, duration: 6000 },
             { type: "ExtraLife", chance: 5, duration: 0 } // No duration, permanent
         ];
 
@@ -161,7 +164,9 @@
         let ballDY;
         let speed = regularSpeed;
         let mouseControl = false;
+        let mouseBall = false;
         let mouseX = 0;
+        let mouseY = 0;
         let rightPressed = false;
         let leftPressed = false;
         let firstThrow = true;
@@ -189,32 +194,31 @@
         //localStorage.clear();
         
         function coordinate(event) {
-            mouseX = event.clientX - gameContainer.offsetLeft;
+            mouseX = event.clientX - gameContainer.offset().left;
+            mouseY = event.clientY - gameContainer.offset().top;
         }
-        
-        function showHideSettings(show){
-            if(show){
+
+        function showHideSettings(show) {
+            if (show) {
                 paused = true;
-                gameContainer.style.filter = "blur(4px)";
-                menuContainer.style.visibility = "visible";
-                menuBlur.style.visibility = "visible";
-            }else{
-                if(!firstThrow)
-                    paused = false;
-                gameContainer.style.filter = "blur(0px)";
-                menuContainer.style.visibility = "hidden";
-                menuBlur.style.visibility = "hidden";
+                gameContainer.css("filter", "blur(4px)");
+                menuContainer.css("visibility", "visible");
+                menuBlur.css("visibility", "visible");
+            } else {
+                if (!firstThrow) paused = false;
+                gameContainer.css("filter", "blur(0px)");
+                menuContainer.css("visibility", "hidden");
+                menuBlur.css("visibility", "hidden");
             }
         }
 
-        function showHideHelpMenu(show){
-
-            if(show){
-                menuContainer.style.visibility = "hidden";
-                helpMenuContainer.style.visibility = "visible"
-            }else{
-                menuContainer.style.visibility = "visible";
-                helpMenuContainer.style.visibility = "hidden"
+        function showHideHelpMenu(show) {
+            if (show) {
+                menuContainer.css("visibility", "hidden");
+                helpMenuContainer.css("visibility", "visible");
+            } else {
+                menuContainer.css("visibility", "visible");
+                helpMenuContainer.css("visibility", "hidden");
             }
         }
 
@@ -224,28 +228,28 @@
 
         function OnOffMusic(on) {
             if(musicPaused && !firstThrow){
-                music.play();
+                music[0].play();
                 musicPaused = false;
             }
             else{
-                music.pause();
+                music[0].pause();
                 musicPaused = true;
             }
         }
 
         function showEndMenu(){
-            finalScore.innerText = "Score: " + score;
-            finalLevel.innerText = "Level: " + (level+1);
+            finalScore.text("Score: " + score);
+            finalLevel.text("Level: " + (level + 1));
             paused = true;
-            gameContainer.style.filter = "blur(4px)"
-            endContainer.style.visibility = "visible";
-            menuBlur.style.visibility = "visible";
+            gameContainer.css("filter", "blur(4px)");
+            endContainer.css("visibility", "visible");
+            menuBlur.css("visibility", "visible");
         }
 
         
         function submitScore(){
-            if(nameInput.value != ""){
-                const newElement = {"Name": nameInput.value, "Score": score};
+            if(nameInput.val() != ""){
+                const newElement = {"Name": nameInput.val(), "Score": score};
                 let index = 0;
                 if(gameStorage){
                     for(index ; index < gameStorage.Info.length ; index++){
@@ -260,60 +264,73 @@
             }
         }
 
-        function updateLeaderBoard(strg){
-            if (strg && strg.Info.length){
-                while (leaderBoardItems.firstChild) {
-                    leaderBoardItems.removeChild(leaderBoardItems.firstChild);
-                }
+        function updateLeaderBoard(strg) {
+            if (strg && strg.Info.length) {
+                // Clear the leaderboard items
+                leaderBoardItems.empty();
+
                 strg.Info.forEach((playerinfo, index) => {
-                    const playerInfo = document.createElement("div");
-                    playerInfo.classList.add("playerInfo");
-                    const playerName = document.createElement("div");
-                    playerName.classList.add("playerName");
-                    if(index<=2){
-                        const playerNumber = document.createElement("img");
-                        playerNumber.classList.add("playerNumber");
-                        playerNumber.src = "medal"+ (index+1) +".svg";
-                        playerName.appendChild(playerNumber);
-                    }else{
-                        playerName.innerHTML = (index+1) + " ";
-                        playerName.style.marginLeft = "7px";
+                    const playerInfo = $("<div>").addClass("playerInfo");
+                    const playerName = $("<div>").addClass("playerName");
+
+                    // Create the medal for the top 3 players
+                    if (index <= 2) {
+                        const playerNumber = $("<img>").addClass("playerNumber")
+                            .attr("src", "Images/medal" + (index + 1) + ".svg");
+                        playerName.append(playerNumber);
+                    } else {
+                        playerName.html((index + 1) + " ");
+                        playerName.css("margin-left", "7px");
                     }
-                    playerName.innerHTML += playerinfo.Name;
-                    const playerScore = document.createElement("div");
-                    playerScore.classList.add("playerScore");
-                    playerScore.textContent = playerinfo.Score;
-                    playerInfo.appendChild(playerName);
-                    playerInfo.appendChild(playerScore);
-                    leaderBoardItems.appendChild(playerInfo);
+
+                    playerName.append(playerinfo.Name);
+
+                    const playerScore = $("<div>").addClass("playerScore")
+                        .text(playerinfo.Score);
+
+                    playerInfo.append(playerName);
+                    playerInfo.append(playerScore);
+
+    
+                    leaderBoardItems.append(playerInfo);
                 });
-            }else{
-                const noInfo = document.createElement("div");
-                noInfo.classList.add("noInfo");
-                noInfo.innerText = "No Records Yet";
-                leaderBoardItems.appendChild(noInfo);
+            } else {
+                const noInfo = $("<div>").addClass("noInfo")
+                    .text("No Records Yet");
+
+                leaderBoardItems.append(noInfo);
             }
         }
 
+        function ResetLevel(){
+
+        }
+
         function createBricks() {
-            while (bricksContainer.firstChild) {
-                bricksContainer.removeChild(bricksContainer.firstChild);
-            }
+            bricksContainer.empty();
+
             for (let r = 0; r < levels[level].brickRowCount; r++) {
                 for (let c = 0; c < levels[level].brickColumnCount; c++) {
-                    const brick = document.createElement("div");
-                    brick.classList.add("brick");
-                    brick.style.left = `${c * (levels[level].brickWidth + brickPadding) + levels[level].brickOffsetLeft}px`;
-                    brick.style.top = `${r * (levels[level].brickHeight + brickPadding) + levels[level].brickOffsetTop}px`;
-                    brick.style.width = `${levels[level].brickWidth}px`;
-                    brick.style.height = `${levels[level].brickHeight}px`;
-                    if(levels[level].bricksLvls[r][c] == -5)
-                        brick.style.backgroundColor = unbreakableColor;
-                    else if(levels[level].bricksLvls[r][c]>0)
-                        brick.style.backgroundColor = bricksColors[levels[level].bricksLvls[r][c]-1];
+                    const brick = $("<div>").addClass("brick");
 
-                    if (levels[level].bricksLvls[r][c]!=0)
-                        bricksContainer.appendChild(brick);
+                    brick.css({
+                        left: `${c * (levels[level].brickWidth + brickPadding) + levels[level].brickOffsetLeft}px`,
+                        top: `${r * (levels[level].brickHeight + brickPadding) + levels[level].brickOffsetTop}px`,
+                        width: `${levels[level].brickWidth}px`,
+                        height: `${levels[level].brickHeight}px`
+                    });
+
+                    if (levels[level].bricksLvls[r][c] == -5) {
+                        brick.css("background-color", unbreakableColor);
+                    } else if (levels[level].bricksLvls[r][c] > 0) {
+                        brick.css("background-color", bricksColors[levels[level].bricksLvls[r][c] - 1]);
+                    }
+
+                    if (levels[level].bricksLvls[r][c] != 0) {
+                        bricksContainer.append(brick);
+                    }
+
+                    // Store brick data
                     bricks.push({
                         element: brick,
                         x: c * (levels[level].brickWidth + brickPadding) + levels[level].brickOffsetLeft,
@@ -327,10 +344,10 @@
         }
 
         function updateLives(lives) {
+            livesContainer.empty();
             for (let l = 0; l < lives; l++) {
-                const heart = document.createElement("img");
-                heart.classList.add("heart");
-                livesContainer.appendChild(heart);
+                const heart = $("<img>").addClass("heart");
+                livesContainer.append(heart);
             }
         }
 
@@ -343,51 +360,44 @@
         }
 
         function updateBallAndPaddle() {
-            paddle.style.width = `${paddleWidth}px`;
-            paddle.style.left = `${paddleX}px`;
-            ball.style.left = `${ballX - ballRadius}px`;
-            ball.style.top = `${ballY - ballRadius}px`;
+            paddle.css({
+                "width": `${paddleWidth}px`,
+                "left": `${paddleX}px`
+            });
+            ball.css({
+                "left": `${ballX - ballRadius}px`,
+                "top": `${ballY - ballRadius}px`
+            });
         }
-        
 
         function createTrail(x, y) {
-            const trail = document.createElement("div");
-            trail.classList.add("trail");
-            trail.style.left = `${x}px`;
-            trail.style.top = `${y}px`;
+            const trail = $("<div>").addClass("trail")
+                .css({
+                    left: `${x}px`,
+                    top: `${y}px`,
+                    animationDuration: `${Math.random() * 0.3 + 0.5}s`,
+                    backgroundColor: `rgba(255, ${Math.floor(Math.random() * 100 + 50)}, 0, 0.8)`
+                });
 
-            const randomDuration = Math.random() * 0.3 + 0.5;
-            const randomColor = `rgba(255, ${Math.floor(Math.random() * 100 + 50)}, 0, 0.8)`;
-            trail.style.animationDuration = `${randomDuration}s`;
-            trail.style.backgroundColor = randomColor;
             const randomOffset = Math.random() * 6 - 3;
-            trail.style.setProperty('--random-offset', randomOffset);
+            trail.css('--random-offset', randomOffset);
 
-            trailContainer.appendChild(trail);
+            trailContainer.append(trail);
 
-            setTimeout(() => trail.remove(), randomDuration * 1000);
+            setTimeout(() => trail.remove(), parseFloat(trail.css("animationDuration")) * 1000);
         }
 
-        function expandPaddle(){
+        function expandPaddle() {
             console.log("expand");
             paddleX -= (paddleExpandedWidth - paddleWidth) / 2;
             paddleX = Math.max(0, Math.min(gameWidth - paddleWidth, paddleX));
             paddleWidth = paddleExpandedWidth;
+
             setTimeout(() => {
                 paddleX += (paddleExpandedWidth - paddleNormalWidth) / 2;
                 paddleWidth = paddleNormalWidth;
-                //paddleX = Math.max(0, Math.min(gameWidth - paddleWidth, paddleX));
+                // paddleX = Math.max(0, Math.min(gameWidth - paddleWidth, paddleX));
             }, powerUpsInfo.find(p => p.type === "ExpandPaddle").duration);
-        }
-
-        function activateShield(){
-            console.log("shield");
-            shieldActive = true;
-            shield.style.visibility = "visible";
-            setTimeout(() => {
-                shieldActive = false;
-                shield.style.visibility = "hidden";
-            }, powerUpsInfo.find(p => p.type === "Shield").duration);
         }
 
         function activateSlowBall(){
@@ -398,55 +408,75 @@
             }, powerUpsInfo.find(p => p.type === "SlowBall").duration);
         }
 
-        function activateFireBall(){
+        function activateShield() {
+            console.log("shield");
+            shieldActive = true;
+            shield.css("visibility", "visible");
+            
+            setTimeout(() => {
+                shieldActive = false;
+                shield.css("visibility", "hidden");
+            }, powerUpsInfo.find(p => p.type === "Shield").duration);
+        }
+
+        function activateFireBall() {
             console.log("fire");
             ignite.play();
-            ball.classList.add("fireball");
+            ball.addClass("fireball");
             onFire = true;
+
             setTimeout(() => {
-                ball.classList.remove("fireball");
+                ball.removeClass("fireball");
                 onFire = false;
             }, powerUpsInfo.find(p => p.type === "FireBall").duration);
         }
 
-        function giveExtraLife(){
+        function giveExtraLife() {
             console.log("extra");
-            if (lives < 4){
+            if (lives < 4) {
                 lives++;
-                const heart = document.createElement("img");
-                heart.classList.add("heart");
-                heart.style.visibility = "visible";
-                livesContainer.appendChild(heart);
+                const heart = $("<img>").addClass("heart").css("visibility", "visible");
+                livesContainer.append(heart);
+
                 setTimeout(() => {
-                    heart.style.visibility = "hidden";
+                    heart.css("visibility", "hidden");
                     setTimeout(() => {
-                        heart.style.visibility = "visible";
+                        heart.css("visibility", "visible");
                         setTimeout(() => {
-                            heart.style.visibility = "hidden";
+                            heart.css("visibility", "hidden");
                             setTimeout(() => {
-                                heart.style.visibility = "visible";
+                                heart.css("visibility", "visible");
                                 setTimeout(() => {
-                                    heart.style.visibility = "hidden";
+                                    heart.css("visibility", "hidden");
                                     setTimeout(() => {
-                                        heart.style.visibility = "visible";
+                                        heart.css("visibility", "visible");
                                     }, 300);
                                 }, 300);
                             }, 300);
                         }, 300);
                     }, 300);
                 }, 300);
-            }else score += 100;
+            } else {
+                score += 100;
+            }
         }
 
-        function updatePowerUps(){
+        function updatePowerUps() {
             powerUps.forEach((powerUp, index) => {
-                powerUp.element.style.top = `${powerUp.element.offsetTop + powerUpDropSpeed}px`;
-                if (powerUp.element.offsetLeft + 20 > paddleX &&
-                    powerUp.element.offsetLeft < paddleX + paddleWidth &&
-                    powerUp.element.offsetTop + 20 > paddle.offsetTop &&
-                    powerUp.element.offsetTop < paddle.offsetTop + paddleHeight){
-                    
-                    switch(powerUp.type){
+                console.log(powerUps.length);
+                const top = powerUp.element.offset().top - gameContainer.offset().top;
+                const left = powerUp.element.offset().left - gameContainer.offset().left;
+                console.log(top);
+                console.log(paddle.offset().top - gameContainer.offset().top);
+                
+                powerUp.element.css("top", `${ top + powerUpDropSpeed}px`);
+
+                if (left + 20 > paddleX &&
+                    left < paddleX + paddleWidth &&
+                    top + 20 > paddle.offset().top - gameContainer.offset().top &&
+                    top < paddle.offset().top - gameContainer.offset().top + paddleHeight) {
+
+                    switch (powerUp.type) {
                         case "ExpandPaddle":
                             expandPaddle();
                             break;
@@ -463,14 +493,18 @@
                             giveExtraLife();
                             break;
                     }
-                    
+
                     powerUps.splice(index, 1);
                     powerUp.element.remove();
+                    console.log("paddle removed");
                 }
-                if (powerUp.element.offsetTop > gameHeight){
+
+                if (top > gameHeight) {
                     powerUps.splice(index, 1);
                     powerUp.element.remove();
+                    console.log("bottom removed");
                 }
+                console.log(powerUps.length);
             });
         }
 
@@ -485,55 +519,57 @@
             else showEndMenu();
         }
 
-        document.addEventListener("keydown", (e) => {
-
-        });
-
-        document.addEventListener("keydown", (e) => {
+        $(document).keydown((e) => {
             if (e.key === "d" || e.key === "Right" || e.key === "ArrowRight") rightPressed = true;
             if (e.key === "q" || e.key === "Left" || e.key === "ArrowLeft") leftPressed = true;
-            if (e.key === "p") if(!firstThrow) paused = !paused;
-            if (e.key === "s"){
+            if (e.key === "p") if (!firstThrow) paused = !paused;
+            if (e.key === "s") {
                 activateFireBall();
                 //activateSlowBall();
                 //paddle.classList.add("sticky");
             }
-            if (e.key === "n"){
+            if (e.key === "n") {
                 nextLevel();
             }
-            if (e.key === " " ) {
-                if(!musicPaused)
-                    music.play();
+            if (e.key === " ") {
+                if (!musicPaused)
+                    music[0].play();
                 showHideSettings(false);
                 paused = false;
                 firstThrow = false;
             }
         });
 
-        document.addEventListener("keyup", (e) => {
+        $(document).keyup((e) => {
             if (e.key === "d" || e.key === "Right" || e.key === "ArrowRight") rightPressed = false;
             if (e.key === "q" || e.key === "Left" || e.key === "ArrowLeft") leftPressed = false;
         });
 
         function update() {
-            if (!paused){
-                pauseIcon.style.visibility = "hidden";
+            if (!paused) {
+                pauseIcon.css("visibility", "hidden");
 
-                if(mouseControl) paddleX = Math.max(paddleWidth/2, Math.min(gameWidth - paddleWidth/2, mouseX)) - paddleWidth/2;
-                else{
+                if (mouseControl) {
+                    paddleX = Math.max(paddleWidth / 2, Math.min(gameWidth - paddleWidth / 2, mouseX)) - paddleWidth / 2;
+                } else {
                     if (rightPressed && paddleX < gameWidth - paddleWidth) paddleX += 4; //move right
                     if (leftPressed && paddleX > 0) paddleX -= 4; //move left
                 }
 
-                ballX += speed * ballDX;
-                ballY += speed * ballDY;
+                if(!mouseBall){
+                    ballX += speed * ballDX;
+                    ballY += speed * ballDY;
+                }else{
+                    ballX = mouseX;
+                    ballY = mouseY;
+                }
 
                 if (onFire) {
                     createTrail(ballX - ballRadius, ballY - ballRadius);
                 }
 
                 if (ballX - ballRadius <= 0 || ballX + ballRadius >= gameWidth) ballDX = -ballDX; //bounce off side walls
-                if ((shieldActive &&  ballY + ballRadius > gameHeight - 10) || ballY - ballRadius <= 0) ballDY = -ballDY; //bounce off top wall or the bottom wall while having shield
+                if ((shieldActive && ballY + ballRadius > gameHeight - 10) || ballY - ballRadius <= 0) ballDY = -ballDY; //bounce off top wall or the bottom wall while having shield
 
                 if (ballY + ballRadius >= gameHeight - paddleHeight - 15 && ballX >= paddleX && ballX <= paddleX + paddleWidth) { //bounce off paddle
                     const hitPosition = ((ballX - paddleX) / paddleWidth - 0.5) * 2; // Normalized hit position (-1 to 1)
@@ -542,7 +578,7 @@
                     ballDY = - Math.cos(angle);
                 } else if (!shieldActive && ballY - ballRadius > gameHeight) {
                     lives--;
-                    livesContainer.removeChild(livesContainer.firstChild);
+                    livesContainer.children().first().remove();
                     if (lives === 0) {
                         showEndMenu();
                         //alert("Game Over");
@@ -552,50 +588,43 @@
                         firstThrow = true;
                         resetBallAndPaddle();
                     }
-                };
+                }
 
                 bricks.forEach((brick, index) => {
-                    const brickLeft = brick.x;
-                    const brickRight = brick.x + brick.width;
-                    const brickTop = brick.y;
-                    const brickBottom = brick.y + brick.height;
 
-                    const ballLeft = ballX - ballRadius;
-                    const ballRight = ballX + ballRadius;
-                    const ballTop = ballY - ballRadius;
-                    const ballBottom = ballY + ballRadius;
+                    let testX = ballX;
+                    let testY = ballY;
 
-                    if (brick.level != 0 &&
-                        ballRight > brickLeft &&
-                        ballLeft < brickRight &&
-                        ballBottom > brickTop &&
-                        ballTop < brickBottom){
+                    if (ballX < brick.x) testX = brick.x;
+                    else if (ballX > brick.x+brick.width) testX = brick.x+brick.width; 
+                    if (ballY < brick.y) testY = brick.y;     
+                    else if (ballY > brick.y+brick.height) testY = brick.y+brick.height;   
 
-                        const distFromLeft = Math.abs(ballRight - brickLeft);
-                        const distFromRight = Math.abs(ballLeft - brickRight);
-                        const distFromTop = Math.abs(ballBottom - brickTop);
-                        const distFromBottom = Math.abs(ballTop - brickBottom);
+                    let distX = Math.abs(ballX-testX);
+                    let distY = Math.abs(ballY-testY);
+                    let distance = Math.sqrt( (distX*distX) + (distY*distY) );
 
-                        const minDist = Math.min(distFromLeft, distFromRight, distFromTop, distFromBottom);
+
+                    if (brick.level != 0 && distance <= ballRadius ) {
+
+                        //console.log(distX + "*****" + distY);
 
                         if ((!onFire && !bounced) || (brick.level == -5 && !bounced)) {
 
-                            if (minDist === distFromLeft || minDist === distFromRight) {
+                            if (distX > distY) {
                                 ballDX = -ballDX;
                                 console.log("sides");
-                                
-                            } else if (minDist === distFromTop || minDist === distFromBottom) {
+
+                            } else {
                                 ballDY = -ballDY;
                                 console.log("top or bottom");
                             }
                             bounced = true;
                         }
-                            
-                        if(brick.level == 1){
-                            
-                            // 20% chance to generate a power-up
-                            if (Math.random() < 0.1) {
 
+                        if (brick.level == 1) {
+                            // 20% chance to generate a power-up
+                            if (Math.random() <= powerUpChance) {
                                 const totalChance = powerUpsInfo.reduce((sum, powerUp) => sum + powerUp.chance, 0);
                                 const random = Math.random() * totalChance;
 
@@ -603,32 +632,33 @@
                                 for (const pwi of powerUpsInfo) {
                                     chance += pwi.chance;
                                     if (random <= chance) {
-                                        const powerUp = document.createElement("div");
-                                        powerUp.classList.add("powerUp");
-                                        powerUp.style.left = `${brick.element.offsetLeft + levels[level].brickWidth / 2 - 10}px`;
-                                        powerUp.style.top = `${brick.y}px`;
-                                        powerUp.style.content = `url("${pwi.type}.svg")`;
-                                        gameContainer.appendChild(powerUp);
+                                        const powerUp = $("<div>").addClass("powerUp")
+                                            .css({
+                                                "left": `${brick.element.offset().left - gameContainer.offset().left + levels[level].brickWidth / 2 - 12}px`,
+                                                "top": `${brick.y}px`,
+                                                "content": `url("Images/${pwi.type}.svg")`
+                                            });
+                                        gameContainer.append(powerUp);
                                         powerUps.push({
                                             element: powerUp,
                                             type: pwi.type
                                         });
                                         console.log(powerUps);
-
                                         break;
                                     }
                                 }
                             }
-                            
-                            brick.element.remove();
 
-                        } else if (brick.level!=-5) brick.element.style.backgroundColor = bricksColors[brick.level-2];
-                        if (brick.level!=-5){
+                            brick.element.remove();
+                        } else if (brick.level != -5) {
+                            brick.element.css("background-color", bricksColors[brick.level - 2]);
+                        }
+                        if (brick.level != -5) {
                             brick.level--;
                             score++;
-                            scoreText.textContent = `Score: ${score}`;
+                            scoreText.text(`Score: ${score}`);
                         }
-                        if (bricks.every(b => b.level <= 0 )) {
+                        if (bricks.every(b => b.level <= 0)) {
                             nextLevel();
                             //alert("You win!");
                             //document.location.reload();
@@ -639,25 +669,33 @@
 
                 updatePowerUps();
                 updateBallAndPaddle();
-            }else if(!firstThrow) pauseIcon.style.visibility = "visible";
-
-            if(firstThrow) startText.style.visibility = "visible";
-            else startText.style.visibility = "hidden";
+            } else if (!firstThrow) {
+                pauseIcon.css("visibility", "visible");
+            }
+            if (firstThrow) {
+                startText.css("visibility", "visible");
+            } else {
+                startText.css("visibility", "hidden");
+            }
 
             requestAnimationFrame(update);
         }
 
         var gameStorage = JSON.parse(localStorage.getItem('gameStorage')); 
-        music.volume = 0.4;
+        $(document).ready(function() {
+            
+            $("body").on("mousemove", coordinate);
 
-        updateLeaderBoard(gameStorage);
+            music.volume = 0.4;
+            updateLeaderBoard(gameStorage);
 
-        updateLives(lives);
-        createBricks();
-        resetBallAndPaddle();
-        updateBallAndPaddle();
+            updateLives(lives);
+            createBricks();
+            resetBallAndPaddle();
+            updateBallAndPaddle();
 
-        update();
+            update();
+        });
 
     </script>
 </body>
